@@ -17,6 +17,7 @@ Quick Links
 Introduction
 ************
 
+This is the Micropython port of TinyDB. 
 TinyDB is a lightweight document oriented database optimized for your happiness :)
 It's written in pure Python and has no external dependencies. The target are
 small apps that would be blown away by a SQL-DB or an external database server.
@@ -36,7 +37,7 @@ TinyDB is:
   e.g. `PyMongo <https://api.mongodb.org/python/current/>`_) nor any dependencies
   from PyPI.
 
-- **works on Python 3.5+ and PyPy:** TinyDB works on all modern versions of Python
+- **works on Python 3.5+, PyPy and Micropython:** TinyDB works on all modern versions of Python
   and PyPy.
 
 - **powerfully extensible:** You can easily extend TinyDB by writing new
@@ -52,7 +53,7 @@ projects on the `discussion forum <http://forum.m-siemens.de/.>`_.
 Supported Python Versions
 *************************
 
-TinyDB has been tested with Python 3.5 - 3.8 and PyPy.
+TinyDB has been tested with Python 3.5 - 3.8, PyPy and Micropython.
 
 Example Code
 ************
@@ -103,6 +104,15 @@ Using Middlewares
     >>> from tinydb.storages import JSONStorage
     >>> from tinydb.middlewares import CachingMiddleware
     >>> db = TinyDB('/path/to/db.json', storage=CachingMiddleware(JSONStorage))
+
+
+What is different in this port
+******************************
+- Becaused Micropython does not have collections.abc.Mapping I had to remove support for custom documents 
+  until I figure out a way to implement them without inheriting from Mapping.
+- For the same reason, invalid dict insertions can no longer be detected.
+
+Other than these everything else works.
 
 
 Contributing

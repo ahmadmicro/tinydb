@@ -151,8 +151,9 @@ def test_custom():
     class MyStorage(Storage):
         pass
 
-    with pytest.raises(TypeError):
-        MyStorage()
+    with pytest.raises(NotImplementedError):
+        storage = MyStorage()
+        storage.read()
 
 
 def test_read_once():

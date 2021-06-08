@@ -3,19 +3,7 @@ This module implements tables, the central place for accessing and manipulating
 data in TinyDB.
 """
 
-from typing import (
-    Callable,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Union,
-    cast,
-    Tuple
-)
-
+from typing import Mapping
 from .storages import Storage
 from .queries import Query
 from .utils import LRUCache
@@ -31,7 +19,7 @@ class Document(dict):
     its ID using ``doc.doc_id``.
     """
 
-    def __init__(self, value: Mapping, doc_id: int):
+    def __init__(self, value, doc_id: int):
         super().__init__(value)
         self.doc_id = doc_id
 
@@ -106,8 +94,7 @@ class Table:
 
         self._storage = storage
         self._name = name
-        self._query_cache: LRUCache[Query, List[Document]] \
-            = self.query_cache_class(capacity=cache_size)
+        self._query_cache = self.query_cache_class(capacity=cache_size)
 
         self._next_id = None
 
@@ -134,7 +121,7 @@ class Table:
         """
         return self._storage
 
-    def insert(self, document: Mapping) -> int:
+    def insert(self, document) -> int:
         """
         Insert a new document into the table.
 
@@ -143,7 +130,7 @@ class Table:
         """
 
         # Make sure the document implements the ``Mapping`` interface
-        if not isinstance(document, Mapping):
+        if not isinstance(document, dict):
             raise ValueError('Document is not a Mapping')
 
         # First, we get the document ID for the new document
@@ -159,7 +146,7 @@ class Table:
             doc_id = self._get_next_id()
 
         # Now, we update the table and add the document
-        def updater(table: dict):
+        def updater(table):
             assert doc_id not in table, 'doc_id '+str(doc_id)+' already exists'
 
             # By calling ``dict(document)`` we convert the data we got to a
@@ -172,7 +159,7 @@ class Table:
 
         return doc_id
 
-    def insert_multiple(self, documents: Iterable[Mapping]) -> List[int]:
+    def insert_multiple(self, documents):
         """
         Insert multiple documents into the table.
 
@@ -184,7 +171,7 @@ class Table:
         def updater(table: dict):
             for document in documents:
                 # Make sure the document implements the ``Mapping`` interface
-                if not isinstance(document, Mapping):
+                if not isinstance(document, dict):
                     raise ValueError('Document is not a Mapping')
 
                 # Get the document ID for this document and store it so we
@@ -201,7 +188,7 @@ class Table:
 
         return doc_ids
 
-    def all(self) -> List[Document]:
+    def all(self):
         """
         Get all documents stored in the table.
 
@@ -215,7 +202,7 @@ class Table:
 
         return list(iter(self))
 
-    def search(self, cond: Query) -> List[Document]:
+    def search(self, cond: Query):
         """
         Search for all documents matching a 'where' cond.
 
@@ -239,9 +226,9 @@ class Table:
 
     def get(
         self,
-        cond: Optional[Query] = None,
-        doc_id: Optional[int] = None,
-    ) -> Optional[Document]:
+        cond = None,
+        doc_id = None,
+    ):
         """
         Get exactly one document specified by a query or a document ID.
 
@@ -276,8 +263,8 @@ class Table:
 
     def contains(
         self,
-        cond: Optional[Query] = None,
-        doc_id: Optional[int] = None
+        cond = None,
+        doc_id = None
     ) -> bool:
         """
         Check whether the database contains a document matching a query or
@@ -300,10 +287,10 @@ class Table:
 
     def update(
         self,
-        fields: Union[Mapping, Callable[[Mapping], None]],
-        cond: Optional[Query] = None,
-        doc_ids: Optional[Iterable[int]] = None,
-    ) -> List[int]:
+        fields,
+        cond = None,
+        doc_ids = None,
+    ):
         """
         Update all matching documents to have a given set of fields.
 
@@ -348,7 +335,7 @@ class Table:
             updated_ids = []
 
             def updater(table: dict):
-                _cond = cast('Query', cond)
+                _cond = cond # cast('Query', cond)
 
                 # We need to convert the keys iterator to a list because
                 # we may remove entries from the ``table`` dict during
@@ -391,10 +378,8 @@ class Table:
 
     def update_multiple(
         self,
-        updates: Iterable[
-            Tuple[Union[Mapping, Callable[[Mapping], None]], Query]
-        ],
-    ) -> List[int]:
+        updates,
+    ):
         """
         Update all matching documents to have a given set of fields.
 
@@ -425,7 +410,7 @@ class Table:
             # during iteration)
             for doc_id in list(table.keys()):
                 for fields, cond in updates:
-                    _cond = cast('Query', cond)
+                    _cond = cond # cast('Query', cond)
 
                     # Pass through all documents to find documents matching the
                     # query. Call the processing callback with the document ID
@@ -441,7 +426,7 @@ class Table:
 
         return updated_ids
 
-    def upsert(self, document: Mapping, cond: Optional[Query] = None) -> List[int]:
+    def upsert(self, document, cond = None):
         """
         Update documents, if they exist, insert them otherwise.
 
@@ -457,7 +442,7 @@ class Table:
 
         # Extract doc_id
         if isinstance(document, Document) and hasattr(document, 'doc_id'):
-            doc_ids: Optional[List[int]] = [document.doc_id]
+            doc_ids = [document.doc_id]
         else:
             doc_ids = None
 
@@ -469,7 +454,7 @@ class Table:
 
         # Perform the update operation
         try:
-            updated_docs: Optional[List[int]] = self.update(document, cond, doc_ids)
+            updated_docs = self.update(document, cond, doc_ids)
         except KeyError:
             # This happens when a doc_id is specified, but it's missing
             updated_docs = None
@@ -484,9 +469,9 @@ class Table:
 
     def remove(
         self,
-        cond: Optional[Query] = None,
-        doc_ids: Optional[Iterable[int]] = None,
-    ) -> List[int]:
+        cond = None,
+        doc_ids = None,
+    ):
         """
         Remove all matching documents.
 
@@ -504,7 +489,7 @@ class Table:
                 # We need to convince MyPy (the static type checker) that
                 # the ``cond is not None`` invariant still holds true when
                 # the updater function is called
-                _cond = cast('Query', cond)
+                _cond = cond # cast('Query', cond)
 
                 # We need to convert the keys iterator to a list because
                 # we may remove entries from the ``table`` dict during
@@ -592,7 +577,7 @@ class Table:
         except KeyError:
             return 0
 
-    def __iter__(self) -> Iterator[Document]:
+    def __iter__(self):
         """
         Iterate over all documents stored in the table.
 
@@ -639,7 +624,7 @@ class Table:
 
         return next_id
 
-    def _read_table(self) -> Dict[int, Mapping]:
+    def _read_table(self):
         """
         Read the table data from the underlying storage.
 
@@ -670,7 +655,7 @@ class Table:
             for doc_id, doc in table.items()
         }
 
-    def _update_table(self, updater: Callable[[Dict[int, Mapping]], None]):
+    def _update_table(self, updater):
         """
         Perform an table update operation.
 

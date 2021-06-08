@@ -1,7 +1,6 @@
 """
 This module contains the main component of TinyDB: the database.
 """
-from typing import Dict, Iterator, Set
 
 from . import JSONStorage
 from .storages import Storage
@@ -127,7 +126,7 @@ class TinyDB:
 
         return table
 
-    def tables(self) -> Set[str]:
+    def tables(self):
         """
         Get the names of all tables in the database.
 
@@ -262,7 +261,7 @@ class TinyDB:
         """
         return len(self.table(self.default_table_name))
 
-    def __iter__(self) -> Iterator[Document]:
+    def __iter__(self):
         """
         Return an iterater for the default table's documents.
         """

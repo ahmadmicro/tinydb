@@ -6,8 +6,6 @@ implementations.
 import io
 import json
 import os
-from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional
 
 __all__ = ('Storage', 'JSONStorage', 'MemoryStorage')
 
@@ -32,7 +30,7 @@ def touch(path: str, create_dirs: bool):
         pass
 
 
-class Storage(ABC):
+class Storage():
     """
     The abstract base class for all Storages.
 
@@ -43,8 +41,7 @@ class Storage(ABC):
     # Using ABCMeta as metaclass allows instantiating only storages that have
     # implemented read and write
 
-    @abstractmethod
-    def read(self) -> Optional[Dict[str, Dict[str, Any]]]:
+    def read(self):
         """
         Read the current state.
 
@@ -55,8 +52,7 @@ class Storage(ABC):
 
         raise NotImplementedError('To be overridden!')
 
-    @abstractmethod
-    def write(self, data: Dict[str, Dict[str, Any]]) -> None:
+    def write(self, data) -> None:
         """
         Write the current state of the database to the storage.
 
@@ -95,6 +91,7 @@ class JSONStorage(Storage):
 
         self._mode = access_mode
         self.kwargs = kwargs
+        self.path = path
 
         # Create the file if it doesn't exist and creating is allowed by the
         # access mode
@@ -107,10 +104,10 @@ class JSONStorage(Storage):
     def close(self) -> None:
         self._handle.close()
 
-    def read(self) -> Optional[Dict[str, Dict[str, Any]]]:
+    def read(self):
         # Get the file size by moving the cursor to the file end and reading
         # its location
-        self._handle.seek(0, os.SEEK_END)
+        self._handle.seek(0, 2) # os.SEEK_END)
         size = self._handle.tell()
 
         if not size:
@@ -124,9 +121,12 @@ class JSONStorage(Storage):
             # Load the JSON contents of the file
             return json.load(self._handle)
 
-    def write(self, data: Dict[str, Dict[str, Any]]):
+    def write(self, data):
         # Move the cursor to the beginning of the file just in case
-        self._handle.seek(0)
+        
+        if self._mode=='r+':
+            self.close()
+            self._handle = open(self.path, mode='w')
 
         # Serialize the database state using the user-provided arguments
         serialized = json.dumps(data, **self.kwargs)
@@ -139,11 +139,14 @@ class JSONStorage(Storage):
 
         # Ensure the file has been writtens
         self._handle.flush()
-        os.fsync(self._handle.fileno())
+        # os.fsync(self._handle.fileno())
 
         # Remove data that is behind the new cursor in case the file has
         # gotten shorter
-        self._handle.truncate()
+        # self._handle.truncate()
+        if self._mode=='r+':
+            self.close()
+            self._handle = open(self.path, mode=self._mode)
 
 
 class MemoryStorage(Storage):
@@ -159,8 +162,8 @@ class MemoryStorage(Storage):
         super().__init__()
         self.memory = None
 
-    def read(self) -> Optional[Dict[str, Dict[str, Any]]]:
+    def read(self):
         return self.memory
 
-    def write(self, data: Dict[str, Dict[str, Any]]):
+    def write(self, data):
         self.memory = data

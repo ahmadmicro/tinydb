@@ -2,17 +2,13 @@
 Utility functions.
 """
 
-from collections import OrderedDict, abc
-from typing import List, Iterator, TypeVar, Generic, Union, Optional
+from collections import OrderedDict
 
-K = TypeVar('K')
-V = TypeVar('V')
-D = TypeVar('D')
 
 __all__ = ('LRUCache', 'freeze')
 
 
-class LRUCache(abc.MutableMapping, Generic[K, V]):
+class LRUCache():
     """
     A least-recently used (LRU) cache with a fixed cache size.
 
@@ -28,10 +24,10 @@ class LRUCache(abc.MutableMapping, Generic[K, V]):
 
     def __init__(self, capacity=None):
         self.capacity = capacity
-        self.cache = OrderedDict()  # type: OrderedDict[K, V]
+        self.cache = OrderedDict() 
 
     @property
-    def lru(self) -> List[K]:
+    def lru(self):
         return list(self.cache.keys())
 
     @property
@@ -47,35 +43,40 @@ class LRUCache(abc.MutableMapping, Generic[K, V]):
     def __contains__(self, key: object) -> bool:
         return key in self.cache
 
-    def __setitem__(self, key: K, value: V) -> None:
+    def __setitem__(self, key, value) -> None:
         self.set(key, value)
 
-    def __delitem__(self, key: K) -> None:
+    def __delitem__(self, key) -> None:
         del self.cache[key]
 
-    def __getitem__(self, key) -> V:
+    def __getitem__(self, key):
         value = self.get(key)
         if value is None:
             raise KeyError(key)
 
         return value
 
-    def __iter__(self) -> Iterator[K]:
+    def __iter__(self):
         return iter(self.cache)
 
-    def get(self, key: K, default: D = None) -> Optional[Union[V, D]]:
+    def move_to_end(self, key):
+        temp = self.cache.get(key)
+        del self.cache[key]
+        self.cache[key] = temp
+
+    def get(self, key, default = None):
         value = self.cache.get(key)
 
         if value is not None:
-            self.cache.move_to_end(key, last=True)
+            self.move_to_end(key)
 
             return value
 
         return default
 
-    def set(self, key: K, value: V):
+    def set(self, key, value):
         if self.cache.get(key):
-            self.cache.move_to_end(key, last=True)
+            self.move_to_end(key)
 
         else:
             self.cache[key] = value
@@ -84,7 +85,7 @@ class LRUCache(abc.MutableMapping, Generic[K, V]):
             # If the queue is of unlimited size, self.capacity is NaN and
             # x > NaN is always False in Python and the cache won't be cleared.
             if self.capacity is not None and self.length > self.capacity:
-                self.cache.popitem(last=False)
+                del self.cache[list(self.cache.keys())[0]]
 
 
 class FrozenDict(dict):

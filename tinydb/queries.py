@@ -17,7 +17,6 @@ False
 """
 
 import re
-from typing import Mapping, Tuple, Callable, Any, Union, List
 
 from .utils import freeze
 
@@ -45,11 +44,11 @@ class QueryInstance:
     instance can be used as a key in a dictionary.
     """
 
-    def __init__(self, test: Callable[[Mapping], bool], hashval: Tuple):
+    def __init__(self, test, hashval):
         self._test = test
         self._hash = hashval
 
-    def __call__(self, value: Mapping) -> bool:
+    def __call__(self, value) -> bool:
         """
         Evaluate the query to check if it matches a specified value.
 
@@ -173,8 +172,8 @@ class Query(QueryInstance):
 
     def _generate_test(
             self,
-            test: Callable[[Any], bool],
-            hashval: Tuple,
+            test,
+            hashval,
             allow_empty_path: bool = False
     ) -> QueryInstance:
         """
@@ -204,7 +203,7 @@ class Query(QueryInstance):
             hashval
         )
 
-    def __eq__(self, rhs: Any):
+    def __eq__(self, rhs):
         """
         Test a dict value for equality.
 
@@ -217,7 +216,7 @@ class Query(QueryInstance):
             ('==', self._path, freeze(rhs))
         )
 
-    def __ne__(self, rhs: Any):
+    def __ne__(self, rhs):
         """
         Test a dict value for inequality.
 
@@ -230,7 +229,7 @@ class Query(QueryInstance):
             ('!=', self._path, freeze(rhs))
         )
 
-    def __lt__(self, rhs: Any) -> QueryInstance:
+    def __lt__(self, rhs) -> QueryInstance:
         """
         Test a dict value for being lower than another value.
 
@@ -243,7 +242,7 @@ class Query(QueryInstance):
             ('<', self._path, rhs)
         )
 
-    def __le__(self, rhs: Any) -> QueryInstance:
+    def __le__(self, rhs) -> QueryInstance:
         """
         Test a dict value for being lower than or equal to another value.
 
@@ -256,7 +255,7 @@ class Query(QueryInstance):
             ('<=', self._path, rhs)
         )
 
-    def __gt__(self, rhs: Any) -> QueryInstance:
+    def __gt__(self, rhs) -> QueryInstance:
         """
         Test a dict value for being greater than another value.
 
@@ -269,7 +268,7 @@ class Query(QueryInstance):
             ('>', self._path, rhs)
         )
 
-    def __ge__(self, rhs: Any) -> QueryInstance:
+    def __ge__(self, rhs) -> QueryInstance:
         """
         Test a dict value for being greater than or equal to another value.
 
@@ -329,7 +328,7 @@ class Query(QueryInstance):
 
         return self._generate_test(test, ('search', self._path, regex))
 
-    def test(self, func: Callable[[Mapping], bool], *args) -> QueryInstance:
+    def test(self, func, *args) -> QueryInstance:
         """
         Run a user-defined test function against a dict value.
 
@@ -354,7 +353,7 @@ class Query(QueryInstance):
             ('test', self._path, func, args)
         )
 
-    def any(self, cond: Union[QueryInstance, List[Any]]) -> QueryInstance:
+    def any(self, cond) -> QueryInstance:
         """
         Check if a condition is met by any document in a list,
         where a condition can also be a sequence (e.g. list).
@@ -389,7 +388,7 @@ class Query(QueryInstance):
             ('any', self._path, freeze(cond))
         )
 
-    def all(self, cond: Union['QueryInstance', List[Any]]) -> QueryInstance:
+    def all(self, cond) -> QueryInstance:
         """
         Check if a condition is met by all documents in a list,
         where a condition can also be a sequence (e.g. list).
@@ -422,7 +421,7 @@ class Query(QueryInstance):
             ('all', self._path, freeze(cond))
         )
 
-    def one_of(self, items: List[Any]) -> QueryInstance:
+    def one_of(self, items) -> QueryInstance:
         """
         Check if the value is contained in a list or generator.
 
@@ -435,7 +434,7 @@ class Query(QueryInstance):
             ('one_of', self._path, freeze(items))
         )
 
-    def fragment(self, document: Mapping) -> QueryInstance:
+    def fragment(self, document: dict) -> QueryInstance:
         def test(value):
             for key in document:
                 if key not in value or value[key] != document[key]:
