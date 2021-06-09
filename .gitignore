@@ -42,3 +42,7 @@ nosetests.xml
 *.db.yml
 
 .DS_Store
+
+# twin
+setup.py
+app.py

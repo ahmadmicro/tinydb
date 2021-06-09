@@ -3,7 +3,6 @@ This module implements tables, the central place for accessing and manipulating
 data in TinyDB.
 """
 
-from typing import Mapping
 from .storages import Storage
 from .queries import Query
 from .utils import LRUCache
