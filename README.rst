@@ -55,6 +55,14 @@ Supported Python Versions
 
 TinyDB has been tested with Python 3.5 - 3.8, PyPy and Micropython.
 
+Installation
+************
+.. code-block:: python
+
+    >>> import mip
+    >>> mip.install("github:ahmadmicro/tinydb")
+
+
 Example Code
 ************
 
